@@ -1,0 +1,7 @@
+---
+
+- name: Install Vault
+  hosts: localhost
+
+  roles:
+    - vault

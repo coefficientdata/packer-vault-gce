@@ -1,0 +1,37 @@
+{
+  "variables": {
+    "source_image_family": "debian-cloud/debian-9",
+    "machine_type": "n1-standard-2",
+    "region": "europe-west2",
+    "zone": "europe-west2-b",
+    "project_id": "kubernetes-workshop-210520"
+  },
+  "builders": [
+    {
+      "type": "googlecompute",
+      "project_id": "{{user `project_id`}}",
+      "source_image_family": "debian-cloud/debian-9",
+      "zone": "{{user `zone`}}",
+      "image_name": "vaultdemo-{{timestamp}}",
+      "ssh_username": "admin"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "sleep 10",
+	"apt-add-repository ppa:rquillo/ansible",
+	"/usr/bin/apt-get update",
+	"/usr/bin/apt-get -y install ansible"
+      ]
+    },
+    {
+      "type": "ansible-local",
+      "playbook_file": "site.yml",
+      "role_paths": [
+	      "roles/vault"
+      ]
+    }
+  ]
+}

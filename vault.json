@@ -1,0 +1,45 @@
+{
+  "variables": {
+    "source_image_family": "debian-9",
+    "machine_type": "n1-standard-2",
+    "region": "europe-west2",
+    "zone": "europe-west2-b",
+    "project_id": "cicd-207712"
+  },
+  "builders": [
+    {
+      "type": "googlecompute",
+      "project_id": "{{user `project_id`}}",
+      "account_file": "packer-svc.json",
+      "machine_type": "{{user `machine_type`}}",
+      "source_image_family": "{{user `source_image_family`}}",
+      "source_image": "debian-9-stretch-v20180911",
+      "source_image_project_id": "debian-cloud",
+      "region": "{{user `region`}}",
+      "zone": "{{user `zone`}}",
+      "image_description": "Demo Vault Machine Image",
+      "image_name": "vaultdemo-{{timestamp}}",
+      "disk_size": 16,
+      "disk_type": "pd-ssd",
+      "ssh_username": "root"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "sleep 10",
+	"apt-add-repository ppa:rquillo/ansible",
+	"/usr/bin/apt-get update",
+	"/usr/bin/apt-get -y install ansible"
+      ]
+    },
+    {
+      "type": "ansible-local",
+      "playbook_file": "site.yml",
+      "role_paths": [
+	      "roles/vault"
+      ]
+    }
+  ]
+}

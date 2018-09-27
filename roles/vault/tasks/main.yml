@@ -1,0 +1,71 @@
+---
+- name: Ensure unzip is installed.
+  package:
+    name: unzip
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Download and unarchive Vault.
+  unarchive:
+    src: https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_amd64.zip
+    dest: /usr/local/bin/
+    owner: root
+    group: root
+    remote_src: true
+    creates: "/usr/local/bin/vault"
+  become: true
+
+- name: Give Vault the ability to use the mlock syscall without running the process as root.
+  capabilities:
+    path: /usr/local/bin/vault
+    capability: cap_ipc_lock+ep
+    state: present
+  become: true
+
+- name: Create a unique, non-privileged system user to run Vault
+  user:
+    name: vault
+    state: present
+    system: yes
+    home: /etc/vault.d
+    shell: /bin/false
+  become: true
+
+- name: Create vault config directory
+  file:
+    path: /etc/vault.d
+    owner: vault
+    group: vault
+    state: directory
+  become: true
+
+- name: Copy vault config to server
+  copy:
+    src: vault.hcl
+    dest: /etc/vault.d/vault.hcl
+  become: true
+
+- name: Copy vault service to server
+  copy:
+    src: vault.service
+    dest: /usr/lib/systemd/system/vault.service
+  become: true
+  notify: start vault
+
+- name: Wait for 15 secs
+  pause:
+    seconds: 15
+
+- name: Initialise Vault and store keys
+  command: vault operator init
+  register: keys
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_CACERT: "/etc/opt/vault/crt/vault-server.ca.crt.pem"
+    VAULT_CLIENT_CERT: "/etc/opt/vault/crt/vault-server.crt.pem"
+    VAULT_CLIENT_KEY: "/etc/opt/vault/crt/vault-server.key.pem"
+  copy:
+    content: {{ keys }}
+    dest: /tmp/vault_unseal_keys.txt
+

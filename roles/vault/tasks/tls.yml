@@ -1,0 +1,50 @@
+---
+
+- name: Ensure python OpenSSL dependencies are installed.
+  pip:
+    name: pyOpenSSL
+    state: present
+
+- name: Ensure directory exists for local self-signed TLS certs.
+  file:
+    path: /etc/opt/vault/crt
+    state: directory
+    owner: root
+    group: root
+    mode: 0700
+  become: true
+
+- name: Generate an OpenSSL private key for root
+  openssl_privatekey:
+    path: /etc/opt/vault/crt/vault-server.ca.key.pem
+
+- name: Generate an OpenSSL CSR for root
+  openssl_csr:
+    path: /etc/opt/vault/crt/vault-server.ca.csr
+    privatekey_path: /etc/opt/vault/crt/vault-server.ca.key.pem
+    common_name: "{{ server_hostname }}"
+
+- name: Generate a Self Signed OpenSSL certificate for root
+  openssl_certificate:
+    path: /etc/opt/vault/crt/vault-server.ca.crt.pem
+    privatekey_path: /etc/opt/vault/crt/vault-server.ca.key.pem
+    csr_path: /etc/opt/vault/crt/vault-server.ca.csr
+    provider: selfsigned
+
+
+- name: Generate an OpenSSL private key for Vault server
+  openssl_privatekey:
+    path: /etc/opt/vault/crt/vault-server.key.pem
+
+- name: Generate an OpenSSL CSR for Vault Server
+  openssl_csr:
+    path: /etc/opt/vault/crt/vault-server.csr
+    privatekey_path: /etc/opt/vault/crt/vault-server.key.pem
+    common_name: "{{ server_hostname }}"
+
+- name: Generate a Self Signed OpenSSL certificate for Vault Server
+  openssl_certificate:
+    path: /etc/opt/vault/crt/vault-server.crt.pem
+    privatekey_path: /etc/opt/vault/crt/vault-server.key.pem
+    csr_path: /etc/opt/vault/crt/vault-server.csr
+    provider: selfsigned

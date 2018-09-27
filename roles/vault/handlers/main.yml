@@ -1,0 +1,9 @@
+---
+
+- name: start vault
+  systemd:
+    state: started
+    name: vault
+    daemon_reload: yes
+  become: true
+
